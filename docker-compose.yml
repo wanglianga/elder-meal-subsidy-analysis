@@ -4,3 +4,11 @@ services:
     volumes:
       - ./data:/app/data
       - ./output:/app/output
+    command: ["python", "run_all.py"]
+
+  generate:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+    command: ["python", "run_all.py", "--force-generate"]

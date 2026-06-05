@@ -15,12 +15,12 @@
 ## 项目结构
 
 ```
-├── run_all.py                  # 主运行脚本（生成数据 + 执行全部分析）
+├── run_all.py                  # 主运行脚本（默认只执行分析，不覆盖输入数据）
 ├── requirements.txt            # Python 依赖
 ├── Dockerfile
 ├── docker-compose.yml
 ├── .dockerignore
-├── data/                       # 输入数据（CSV，由脚本自动生成）
+├── data/                       # 输入数据（CSV）
 │   ├── elderly_profiles.csv    # 老人档案
 │   ├── subsidy_levels.csv      # 补贴等级
 │   ├── pickup_methods.csv      # 取餐方式
@@ -30,7 +30,7 @@
 │   ├── verification_vouchers.csv # 核销凭证
 │   └── satisfaction_surveys.csv  # 满意回访
 ├── scripts/
-│   ├── generate_data.py        # 模拟数据生成
+│   ├── generate_data.py        # 模拟数据生成（需显式触发，不会自动覆盖）
 │   ├── analysis_subsidy.py     # 分析1：长期未使用补贴老人筛查
 │   ├── analysis_meal.py        # 分析2：餐品与慢病适配风险
 │   ├── analysis_delivery.py    # 分析3：配送路线超时分析
@@ -64,22 +64,41 @@
 - Docker 和 Docker Compose（推荐方式）
 - 或 Python 3.11+、pip
 
+### 运行模式说明
+
+本系统有两种运行模式：
+
+- **分析模式（默认）**：读取 `data/` 目录中的现有 CSV 执行分析，**不会修改或覆盖输入数据**。适合日常复跑和接入真实业务数据。
+- **数据生成模式**：通过 `--generate` 或 `--force-generate` 参数触发，生成模拟数据到 `data/` 目录。适合首次使用或需要重置数据时。
+
 ### 方式一：Docker 一键启动（推荐）
 
+#### 首次使用：生成模拟数据并执行分析
+
 ```bash
-docker compose up --build
+docker compose up --build generate
 ```
+
+此命令会生成模拟数据并执行全部分析，结果输出到 `output/` 目录。
+
+#### 日常复跑：只执行分析（不覆盖数据）
+
+```bash
+docker compose up --build analysis
+```
+
+此命令仅读取 `data/` 目录中现有的 CSV 执行分析，不会修改输入数据。
 
 后台运行：
 
 ```bash
-docker compose up --build -d
+docker compose up --build analysis -d
 ```
 
 查看运行日志：
 
 ```bash
-docker compose logs
+docker compose logs analysis
 ```
 
 停止并清理：
@@ -98,17 +117,44 @@ docker compose down
 pip install -r requirements.txt
 ```
 
-#### 2. 运行全部分析
+#### 2. 首次使用：生成模拟数据
+
+```bash
+python run_all.py --generate
+```
+
+此命令会生成模拟数据并执行全部分析。
+
+#### 3. 日常复跑：只执行分析（不覆盖数据）
 
 ```bash
 python run_all.py
 ```
 
+此命令仅读取 `data/` 目录中现有的 CSV 执行分析，不会修改输入数据。
+
+#### 4. 强制重新生成模拟数据
+
+```bash
+python run_all.py --force-generate
+```
+
+此命令会覆盖 `data/` 目录中的现有文件并执行分析。
+
 访问地址：本项目为命令行数据分析工具，无 Web 界面。运行后查看 `output/` 目录下的 CSV 文件即为分析结果。
 
 ### 替换真实数据
 
-将 `data/` 目录下的 CSV 文件替换为实际业务数据（保持相同的列名和格式），重新运行 `python run_all.py` 即可。
+1. 将 `data/` 目录下的 CSV 文件替换为实际业务数据（保持相同的列名和格式）
+2. 运行 `python run_all.py` 即可执行分析
+3. 分析输出的每条明细均包含原始记录ID（订单ID、老人ID、核销ID等），可直接追溯到源数据
+
+## 数据生成安全保护
+
+- 直接运行 `python scripts/generate_data.py` 时，如果 `data/` 目录已有 CSV 文件，会提示确认而不会直接覆盖
+- 需设置环境变量 `FORCE_GENERATE=1` 才能覆盖已有数据
+- 通过 `run_all.py --generate` 触发时会自动确认覆盖（仅当 data/ 为空时）
+- 通过 `run_all.py --force-generate` 触发时会强制覆盖已有数据
 
 ## 分析阈值参数
 

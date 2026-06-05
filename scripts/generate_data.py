@@ -274,6 +274,22 @@ def generate_satisfaction_surveys(profiles, orders):
 
 
 def main():
+    existing_csvs = [f for f in [
+        'elderly_profiles.csv', 'subsidy_levels.csv', 'pickup_methods.csv',
+        'meal_nutrition.csv', 'order_records.csv', 'delivery_times.csv',
+        'verification_vouchers.csv', 'satisfaction_surveys.csv',
+    ] if os.path.isfile(os.path.join(DATA_DIR, f))]
+
+    if existing_csvs:
+        print(f"⚠️  data/ 目录已存在 {len(existing_csvs)} 个CSV文件")
+        print("   直接运行将覆盖这些文件，请确认操作意图。")
+        confirm = os.environ.get('FORCE_GENERATE', '').strip().lower()
+        if confirm not in ('1', 'yes', 'true'):
+            print("   如需覆盖，请设置环境变量: FORCE_GENERATE=1")
+            print("   或通过 run_all.py --force-generate 触发")
+            return
+        print("   FORCE_GENERATE=1，继续覆盖...")
+
     print("=== 开始生成模拟数据 ===")
 
     print("1/8 生成老人档案...")
