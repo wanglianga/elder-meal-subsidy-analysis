@@ -22,6 +22,17 @@ MEAL_TIMES = ['早餐', '午餐', '晚餐']
 VERIFY_METHODS = ['人脸识别', '刷卡', '手工核销']
 ROUTES = [f'R{str(i).zfill(3)}' for i in range(1, 16)]
 DELIVERY_STAFF = [f'配送员{str(i).zfill(2)}' for i in range(1, 11)]
+ORDER_SOURCES = ['老人主动选择', '家属代订', '食堂替换餐品']
+ORDER_CHANNELS = ['小程序', '电话订餐', '现场点餐', '社区代办']
+DOCTOR_NOTES = [
+    '', '低盐饮食', '低糖饮食', '低脂饮食', '低盐低糖饮食',
+    '避免辛辣刺激', '少食多餐', '软食为主', '糖尿病饮食', '高血压饮食'
+]
+REFUND_REASONS = [
+    '', '餐品不合口味', '健康原因退餐', '糖分过高', '盐分过高',
+    '过于油腻', '送餐太晚', '临时外出', '重复下单', '其他原因'
+]
+FAT_THRESHOLD_HIGH = 20
 
 END_DATE = datetime(2026, 5, 31)
 START_DATE = datetime(2025, 12, 1)
@@ -48,10 +59,22 @@ def generate_elderly_profiles():
     surnames = np.random.choice(['张', '王', '李', '赵', '刘'], N_ELDERS)
     contacts = [f'紧急联系人{s}' for s in surnames]
 
+    doctor_notes = []
+    for c in chronics:
+        if c == '糖尿病':
+            doctor_notes.append(np.random.choice(DOCTOR_NOTES, p=[0.1, 0.05, 0.35, 0.05, 0.25, 0.05, 0.05, 0.05, 0.0, 0.05]))
+        elif c == '高血压':
+            doctor_notes.append(np.random.choice(DOCTOR_NOTES, p=[0.1, 0.35, 0.05, 0.05, 0.25, 0.05, 0.05, 0.05, 0.0, 0.05]))
+        elif c == '糖尿病+高血压':
+            doctor_notes.append(np.random.choice(DOCTOR_NOTES, p=[0.05, 0.15, 0.15, 0.05, 0.35, 0.05, 0.05, 0.05, 0.05, 0.05]))
+        else:
+            doctor_notes.append(np.random.choice(DOCTOR_NOTES, p=[0.7, 0.05, 0.05, 0.05, 0.03, 0.03, 0.03, 0.03, 0.01, 0.02]))
+
     return pd.DataFrame({
         '老人ID': eids, '姓名': [f'老人{e}' for e in eids],
         '性别': genders, '年龄': ages, '所属社区': communities,
-        '住址': addresses, '联系电话': phones, '慢病标签': chronics, '紧急联系人': contacts,
+        '住址': addresses, '联系电话': phones, '慢病标签': chronics,
+        '医生备注': doctor_notes, '紧急联系人': contacts,
     })
 
 
@@ -92,37 +115,37 @@ def generate_pickup_methods(profiles):
 
 def generate_meal_nutrition():
     return pd.DataFrame([
-        ('M001', '红烧肉套餐', 650, 55, 1200, 8, False, False),
-        ('M002', '清蒸鱼套餐', 420, 30, 600, 3, True, True),
-        ('M003', '西红柿鸡蛋面', 380, 48, 800, 6, False, True),
-        ('M004', '宫保鸡丁套餐', 520, 42, 950, 7, False, False),
-        ('M005', '小米粥+馒头+咸菜', 320, 58, 1500, 4, False, False),
-        ('M006', '蒸南瓜+杂粮粥', 280, 45, 300, 5, True, True),
-        ('M007', '糖醋排骨套餐', 620, 52, 1050, 15, False, False),
-        ('M008', '冬瓜排骨汤套餐', 400, 35, 700, 4, True, True),
-        ('M009', '蛋炒饭', 480, 60, 900, 5, False, False),
-        ('M010', '白菜豆腐煲', 300, 25, 500, 3, True, True),
-        ('M011', '红烧狮子头套餐', 580, 40, 1100, 6, False, False),
-        ('M012', '蒸蛋羹+蔬菜+米饭', 350, 42, 650, 3, True, True),
-        ('M013', '咖喱牛肉饭', 550, 50, 1000, 4, False, False),
-        ('M014', '皮蛋瘦肉粥+花卷', 340, 46, 850, 3, False, True),
-        ('M015', '糖醋里脊套餐', 560, 48, 1050, 14, False, False),
-        ('M016', '清炒时蔬+米饭', 280, 38, 400, 2, True, True),
-        ('M017', '炸酱面', 450, 55, 1200, 6, False, False),
-        ('M018', '南瓜粥+全麦面包', 260, 40, 350, 5, True, True),
-        ('M019', '鱼香肉丝套餐', 500, 44, 980, 8, False, False),
-        ('M020', '素三鲜包子+豆浆', 300, 38, 450, 3, True, True),
-        ('M021', '酱肘子套餐', 680, 38, 1400, 5, False, False),
-        ('M022', '紫薯粥+鸡蛋', 250, 35, 300, 4, True, True),
-        ('M023', '回锅肉套餐', 600, 42, 1150, 7, False, False),
-        ('M024', '银耳莲子羹+馒头', 270, 50, 350, 10, False, True),
-        ('M025', '蒜蓉西兰花+米饭', 290, 35, 450, 2, True, True),
-        ('M026', '蜜汁叉烧饭', 550, 48, 980, 18, False, False),
-        ('M027', '山药排骨汤+米饭', 380, 40, 650, 3, True, True),
-        ('M028', '酸辣粉', 400, 52, 1300, 5, False, False),
-        ('M029', '荞麦面+蔬菜沙拉', 310, 35, 380, 2, True, True),
-        ('M030', '红豆沙+油条', 350, 55, 550, 12, False, False),
-    ], columns=['餐品ID', '餐品名称', '热量(kcal)', '碳水(g)', '钠(mg)', '糖(g)', '低盐标识', '低糖标识'])
+        ('M001', '红烧肉套餐', 650, 55, 1200, 8, 35, False, False, False),
+        ('M002', '清蒸鱼套餐', 420, 30, 600, 3, 12, True, True, True),
+        ('M003', '西红柿鸡蛋面', 380, 48, 800, 6, 10, False, True, True),
+        ('M004', '宫保鸡丁套餐', 520, 42, 950, 7, 25, False, False, False),
+        ('M005', '小米粥+馒头+咸菜', 320, 58, 1500, 4, 8, False, False, True),
+        ('M006', '蒸南瓜+杂粮粥', 280, 45, 300, 5, 5, True, True, True),
+        ('M007', '糖醋排骨套餐', 620, 52, 1050, 15, 28, False, False, False),
+        ('M008', '冬瓜排骨汤套餐', 400, 35, 700, 4, 15, True, True, True),
+        ('M009', '蛋炒饭', 480, 60, 900, 5, 18, False, False, True),
+        ('M010', '白菜豆腐煲', 300, 25, 500, 3, 8, True, True, True),
+        ('M011', '红烧狮子头套餐', 580, 40, 1100, 6, 32, False, False, False),
+        ('M012', '蒸蛋羹+蔬菜+米饭', 350, 42, 650, 3, 10, True, True, True),
+        ('M013', '咖喱牛肉饭', 550, 50, 1000, 4, 22, False, False, False),
+        ('M014', '皮蛋瘦肉粥+花卷', 340, 46, 850, 3, 12, False, True, True),
+        ('M015', '糖醋里脊套餐', 560, 48, 1050, 14, 26, False, False, False),
+        ('M016', '清炒时蔬+米饭', 280, 38, 400, 2, 6, True, True, True),
+        ('M017', '炸酱面', 450, 55, 1200, 6, 20, False, False, False),
+        ('M018', '南瓜粥+全麦面包', 260, 40, 350, 5, 5, True, True, True),
+        ('M019', '鱼香肉丝套餐', 500, 44, 980, 8, 22, False, False, False),
+        ('M020', '素三鲜包子+豆浆', 300, 38, 450, 3, 8, True, True, True),
+        ('M021', '酱肘子套餐', 680, 38, 1400, 5, 38, False, False, False),
+        ('M022', '紫薯粥+鸡蛋', 250, 35, 300, 4, 7, True, True, True),
+        ('M023', '回锅肉套餐', 600, 42, 1150, 7, 30, False, False, False),
+        ('M024', '银耳莲子羹+馒头', 270, 50, 350, 10, 3, False, True, True),
+        ('M025', '蒜蓉西兰花+米饭', 290, 35, 450, 2, 6, True, True, True),
+        ('M026', '蜜汁叉烧饭', 550, 48, 980, 18, 20, False, False, False),
+        ('M027', '山药排骨汤+米饭', 380, 40, 650, 3, 12, True, True, True),
+        ('M028', '酸辣粉', 400, 52, 1300, 5, 15, False, False, True),
+        ('M029', '荞麦面+蔬菜沙拉', 310, 35, 380, 2, 5, True, True, True),
+        ('M030', '红豆沙+油条', 350, 55, 550, 12, 18, False, False, True),
+    ], columns=['餐品ID', '餐品名称', '热量(kcal)', '碳水(g)', '钠(mg)', '糖(g)', '脂肪(g)', '低盐标识', '低糖标识', '低脂标识'])
 
 
 def generate_orders(profiles, subsidy_levels, pickup_methods, meals):
@@ -152,10 +175,34 @@ def generate_orders(profiles, subsidy_levels, pickup_methods, meals):
 
     oids = [f'O{str(i).zfill(6)}' for i in range(1, N_ORDERS + 1)]
 
+    order_sources = np.random.choice(ORDER_SOURCES, N_ORDERS, p=[0.55, 0.30, 0.15])
+    order_channels = np.random.choice(ORDER_CHANNELS, N_ORDERS, p=[0.40, 0.25, 0.25, 0.10])
+
+    chronic_map = dict(zip(profiles['老人ID'], profiles['慢病标签']))
+    refund_reasons = []
+    for i in range(N_ORDERS):
+        eid = eids[i]
+        mid = meal_ids[i]
+        chronic = chronic_map.get(eid, '无')
+        meal = meals[meals['餐品ID'] == mid].iloc[0]
+
+        if np.random.random() < 0.05:
+            if '糖尿病' in chronic and meal['糖(g)'] >= 10:
+                refund_reasons.append(np.random.choice(['糖分过高', '健康原因退餐'], p=[0.6, 0.4]))
+            elif '高血压' in chronic and meal['钠(mg)'] >= 1000:
+                refund_reasons.append(np.random.choice(['盐分过高', '健康原因退餐'], p=[0.6, 0.4]))
+            elif meal['脂肪(g)'] >= 20 and np.random.random() < 0.3:
+                refund_reasons.append('过于油腻')
+            else:
+                refund_reasons.append(np.random.choice(REFUND_REASONS))
+        else:
+            refund_reasons.append('')
+
     return pd.DataFrame({
         '订单ID': oids, '老人ID': eids, '餐品ID': meal_ids,
         '下单日期': order_date_strs, '餐次': meal_times,
         '餐品单价': prices, '补贴抵扣': covers, '自付金额': self_pays,
+        '订单来源': order_sources, '订餐渠道': order_channels, '退餐原因': refund_reasons,
     })
 
 

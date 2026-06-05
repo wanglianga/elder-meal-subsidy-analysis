@@ -11,6 +11,7 @@ from scripts.analysis_meal import main as analysis_meal
 from scripts.analysis_delivery import main as analysis_delivery
 from scripts.analysis_verify import main as analysis_verify
 from scripts.analysis_satisfaction import main as analysis_satisfaction
+from scripts.analysis_dietary_restriction import main as analysis_dietary_restriction
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'output')
@@ -59,6 +60,10 @@ def run_analysis():
     print()
     s5, _ = analysis_satisfaction()
     summaries.append(('5. 社区食堂满意度下降趋势分析', s5))
+
+    print()
+    s6, _ = analysis_dietary_restriction()
+    summaries.append(('6. 忌口匹配分析', s6))
 
     end = datetime.now()
     duration = (end - start).total_seconds()

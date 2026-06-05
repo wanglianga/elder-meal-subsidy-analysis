@@ -169,3 +169,6 @@ python run_all.py --force-generate
 | SAME_ELDER_GAP_MINUTES | 120 | analysis_verify.py | 短时间重核阈值(分钟) |
 | DECLINE_CONSECUTIVE_MONTHS | 2 | analysis_satisfaction.py | 连续下降判定月数 |
 | DECLINE_RATIO_THRESHOLD | -0.3 | analysis_satisfaction.py | 显著下降变化率阈值 |
+| SUGAR_THRESHOLD_HIGH | 10 | analysis_dietary_restriction.py | 高糖餐品阈值(g) |
+| SODIUM_THRESHOLD_HIGH | 1000 | analysis_dietary_restriction.py | 高盐餐品阈值(mg) |
+| FAT_THRESHOLD_HIGH | 20 | analysis_dietary_restriction.py | 高脂餐品阈值(g) |
